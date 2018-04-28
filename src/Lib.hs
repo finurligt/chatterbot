@@ -1,5 +1,5 @@
 module Lib
-    ( substitute, match
+    ( substitute, match, transformationApply, reflect
     ) where
 
 --import Data.Maybe
@@ -36,10 +36,40 @@ longerWildcardMatch (x:xs) (t:ts) =
   mmap (\m -> (t:m)) (match x (x:xs) ts)
 
 
+transformationApply :: Eq a => a -> ([a] -> [a]) ->
+                       [a] -> ([a], [a]) -> Maybe [a]
+transformationApply wildcard f s (p1, p2) =
+    mmap (substitute wildcard p2) (mmap f (match wildcard p1 s))
 
 
+transformationsApply :: Eq a => a -> ([a] -> [a]) ->
+                        [([a], [a])] -> [a] -> Maybe [a]
+transformationsApply wildcard f (p:ps) s = orElse (transformationApply wildcard f s p) (transformationsApply wildcard f ps s)
 
+type Phrase = [String]
+type PhrasePair = (Phrase, Phrase)
+type BotBrain = [(Phrase, [Phrase])]
 
+reflections =
+  [ ("am",     "are"),
+    ("was",    "were"),
+    ("i",      "you"),
+    ("i'm",    "you are"),
+    ("i'd",    "you would"),
+    ("i've",   "you have"),
+    ("i'll",   "you will"),
+    ("my",     "your"),
+    ("me",     "you"),
+    ("are",    "am"),
+    ("you're", "i am"),
+    ("you've", "i have"),
+    ("you'll", "i will"),
+    ("your",   "my"),
+    ("yours",  "mine"),
+    ("you",    "me")
+  ]
+reflect :: Phrase -> Phrase
+reflect phrase = map (\word -> foldl (\acc (r1, r2) -> if(r1 == word) then r2 else acc) word reflections) phrase
 
 
 
